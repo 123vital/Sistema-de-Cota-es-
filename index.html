@@ -1,0 +1,114 @@
+ <!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sistema de Orçamento — PMG</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="login">
+  <div class="sheet">
+    <h2>Sistema de Orçamento — PMG</h2>
+    <div id="vLogin">
+      <p>Entre com o seu e-mail e senha</p>
+      <label for="lu">E-mail</label><input id="lu" class="in" type="email" autocomplete="username" inputmode="email">
+      <label for="lp">Senha</label><input id="lp" class="in" type="password" autocomplete="current-password">
+      <p class="err" id="lerr"></p>
+      <div class="col"><button class="btn pri" id="lgo">Entrar</button><button class="btn" id="forgot">Esqueci minha senha</button><button class="btn" id="toSign">Criar nova senha / conta</button></div>
+    </div>
+    <div id="vSign" hidden>
+      <p>Crie o seu acesso pessoal</p>
+      <label for="sn">Nome</label><input id="sn" class="in" autocomplete="name">
+      <label for="se">E-mail</label><input id="se" class="in" type="email" autocomplete="email" inputmode="email">
+      <label for="sp">Senha (mínimo 6 caracteres)</label><input id="sp" class="in" type="password" autocomplete="new-password">
+      <label for="sp2">Confirmar senha</label><input id="sp2" class="in" type="password" autocomplete="new-password">
+      <p class="err" id="serr"></p>
+      <div class="col"><button class="btn pri" id="sgo">Criar conta</button><button class="btn" id="toLogin">Voltar ao login</button></div>
+    </div>
+  </div>
+</div>
+
+<header>
+  <div class="brand">
+    <svg width="84" height="84" viewBox="0 0 64 64" fill="none" aria-hidden="true"><rect x="10" y="6" width="38" height="48" rx="7" stroke="#2f8bdf" stroke-width="5"/><rect x="19" y="30" width="6" height="16" fill="#2f8bdf"/><rect x="29" y="22" width="6" height="24" fill="#2f8bdf"/><rect x="39" y="16" width="5" height="30" fill="#2f8bdf"/><path d="M38 48l7 7 15-17" stroke="#10b981" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div><h1>Sistema de Orçamento — PMG</h1><p class="sub">Setor de Administração · consulta e comparação de cotações</p></div>
+  </div>
+  <div class="hbtns">
+    <button class="btn" id="theme" aria-label="Alternar tema">☀</button>
+    <button class="btn" id="logout">⎋ Sair</button>
+    <span class="sub" id="who" style="align-self:center"></span>
+  </div>
+</header>
+
+<main>
+  <section class="kpis">
+    <div class="card"><span>Cotações registradas</span><b id="k1">0</b></div>
+    <div class="card"><span>Itens diferentes</span><b id="k2">0</b></div>
+    <div class="card"><span>Empresas consultadas</span><b id="k3">0</b></div>
+    <div class="card eco"><span>↘ Economia potencial</span><b id="k4">R$ 0,00</b></div>
+  </section>
+
+  <label class="field" for="q" style="font-weight:400">🔍<input id="q" placeholder="Buscar item, empresa ou CNPJ"></label>
+  <label class="field" for="cat" style="font-weight:400">⛛<select id="cat"><option value="">Todas as categorias</option></select></label>
+
+  <div class="actions">
+    <button class="btn pri" id="bNova">＋ Nova cotação</button>
+    <button class="btn sec" id="bRel">📝 Criar relatório</button>
+    <button class="btn" id="bExp">⬇ Exportar Excel</button>
+    <button class="btn" id="bImp">⬆ Importar</button>
+    <button class="btn" id="bMod" style="border-color:transparent">📄 Modelo</button>
+    <input type="file" id="file" accept=".xlsx,.xls,.csv" hidden>
+  </div>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab on" data-t="cot">Cotações</button>
+    <button class="tab" data-t="mapa">Mapa comparativo</button>
+    <button class="tab" data-t="graf">Gráficos</button>
+    <button class="tab" data-t="ia">Sugestão IA</button>
+  </nav>
+  <div class="box" id="view"></div>
+</main>
+
+<!-- Nova / editar cotação -->
+<div class="modal" id="mCot"><div class="sheet">
+  <button class="x" data-close aria-label="Fechar">×</button>
+  <h2 id="cotTitle">Nova cotação</h2><p>Preencha os dados da proposta recebida.</p>
+  <label for="fItem">Item</label><input id="fItem" class="in">
+  <label for="fCat">Categoria</label><input id="fCat" class="in" list="cats">
+  <datalist id="cats"></datalist>
+  <label for="fEmp">Empresa</label><input id="fEmp" class="in">
+  <label for="fCnpj">CNPJ</label><input id="fCnpj" class="in" placeholder="00.000.000/0000-00" inputmode="numeric">
+  <label for="fQtd">Quantidade</label><input id="fQtd" class="in" type="number" min="1" value="1">
+  <label for="fPreco">Preço unitário (R$)</label><input id="fPreco" class="in" type="number" min="0" step="0.01">
+  <label for="fData">Data da cotação</label><input id="fData" class="in" type="date">
+  <p class="err" id="cotErr"></p>
+  <div class="col"><button class="btn pri" id="saveCot">Salvar cotação</button><button class="btn" data-close>Cancelar</button></div>
+</div></div>
+
+<!-- Relatório -->
+<div class="modal" id="mRel"><div class="sheet">
+  <button class="x" data-close aria-label="Fechar">×</button>
+  <h2>Gerar relatório</h2>
+  <p id="relInfo"></p>
+  <label for="nPres">Nome do presidente</label><input id="nPres" class="in" placeholder="Nome completo">
+  <label for="cPres">Cargo</label><input id="cPres" class="in" value="Presidente">
+  <label for="nDir">Nome da diretoria</label><input id="nDir" class="in" placeholder="Nome completo">
+  <label for="cDir">Cargo</label><input id="cDir" class="in" value="Diretoria">
+  <div class="lbl"><label>Assinatura do presidente</label><button data-clr="sPres">Limpar</button></div>
+  <canvas class="sig" id="sPres"></canvas>
+  <div class="lbl"><label>Assinatura da diretoria</label><button data-clr="sDir">Limpar</button></div>
+  <canvas class="sig" id="sDir"></canvas>
+  <p class="hint" style="margin-top:18px">Assine com o dedo, caneta ou mouse. A data é preenchida automaticamente: "Autorizado" na Presidência e "Liberado" na Diretoria.</p>
+  <div class="col"><button class="btn pri" id="goRel">Gerar relatório</button><button class="btn" data-close>Cancelar</button></div>
+</div></div>
+
+<script src="script.js"></script>
+</body>
+</html>
