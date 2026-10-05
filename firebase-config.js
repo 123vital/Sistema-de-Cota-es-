@@ -1,6 +1,4 @@
-js
-
-const firebaseConfig = {
+ const firebaseConfig = {
   apiKey: "...",
   authDomain: "sistema-cotacao-pmg.firebaseapp.com",
   projectId: "sistema-cotacao-pmg",
