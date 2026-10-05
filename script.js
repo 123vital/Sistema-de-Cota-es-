@@ -1,7 +1,22 @@
- const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
-const configured=typeof firebaseConfig!=='undefined'&&firebaseConfig.apiKey&&!firebaseConfig.apiKey.startsWith('COLE');
+ window.addEventListener('error',e=>{
+  let b=document.getElementById('errbar');
+  if(!b){b=document.createElement('div');b.id='errbar';b.style.cssText='position:fixed;left:0;right:0;bottom:0;z-index:99;background:#b91c1c;color:#fff;padding:10px 14px;font:13px/1.3 monospace;word-break:break-word';document.body.appendChild(b);}
+  b.textContent='Erro no site: '+e.message+' ('+String(e.filename||'').split('/').pop()+':'+e.lineno+')';
+});
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+let motivo='';
+const configured=(()=>{
+  if(typeof firebase==='undefined'){motivo='A biblioteca do Firebase não carregou. Verifique a internet ou desative o bloqueador de anúncios para este site.';return false;}
+  if(typeof firebaseConfig==='undefined'){motivo='O arquivo firebase-config.js não foi lido. Confira se ele está na raiz do repositório e se começa com: const firebaseConfig = {';return false;}
+  if(!firebaseConfig.apiKey||String(firebaseConfig.apiKey).startsWith('COLE')){motivo='Firebase não configurado. Cole as chaves do seu projeto em firebase-config.js.';return false;}
+  return true;
+})();
 let auth,col;
-if(configured){firebase.initializeApp(firebaseConfig);auth=firebase.auth();col=firebase.firestore().collection('cotacoes');}
+if(configured){
+  try{firebase.initializeApp(firebaseConfig);auth=firebase.auth();col=firebase.firestore().collection('cotacoes');}
+  catch(e){motivo='Erro ao iniciar o Firebase: '+e.message;}
+}
+const fbOk=configured&&!!auth;
 const brl=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fdate=d=>d?d.split('-').reverse().join('/'):'';
@@ -196,9 +211,9 @@ $('#sp2').addEventListener('keydown',e=>{if(e.key==='Enter')$('#sgo').click();})
 $('#logout').onclick=()=>auth&&auth.signOut();
 
 let unsub=null;
-if(!configured){
+if(!fbOk){
   $('#login').classList.add('open');
-  $('#vLogin').innerHTML='<p class="err">Firebase não configurado. Abra o arquivo firebase-config.js e cole as chaves do seu projeto.</p>';
+  $('#vLogin').innerHTML='<p class="err">'+esc(motivo||'Firebase indisponível.')+'</p>';
 }else{
   auth.onAuthStateChanged(user=>{
     $('#login').classList.toggle('open',!user);
