@@ -30,6 +30,7 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const fdate=d=>d?d.split('-').reverse().join('/'):'';
 const today=()=>new Date().toISOString().slice(0,10);
 
+const CATEGORIAS=['Material de Escritório','Informática','Mobiliário','Limpeza','Serviços','Obras e Manutenção','Veículos','Geral'];
 let data=[], tab='cot', editId=null;
 const total=c=>c.qtd*c.preco;
 
@@ -51,9 +52,9 @@ function renderKpis(){
   $('#k2').textContent=new Set(data.map(c=>c.item)).size;
   $('#k3').textContent=new Set(data.map(c=>c.emp)).size;
   $('#k4').textContent=brl(savings(data));
-  const cats=[...new Set(data.map(c=>c.cat).filter(Boolean))].sort(), cur=$('#cat').value;
+  const extras=[...new Set(data.map(c=>c.cat).filter(Boolean))].filter(c=>!CATEGORIAS.includes(c)).sort(), cats=[...CATEGORIAS,...extras], cur=$('#cat').value, curForm=$('#fCat').value;
   $('#cat').innerHTML='<option value="">Todas as categorias</option>'+cats.map(c=>`<option ${c===cur?'selected':''}>${esc(c)}</option>`).join('');
-  $('#cats').innerHTML=cats.map(c=>`<option value="${esc(c)}">`).join('');
+  $('#fCat').innerHTML=cats.map(c=>`<option ${c===(curForm||'Geral')?'selected':''}>${esc(c)}</option>`).join('');
 }
 
 function render(){
@@ -93,12 +94,12 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeAll();});
 
 function openCot(c){
   editId=c?c.id:null; $('#cotTitle').textContent=c?'Editar cotação':'Nova cotação'; $('#cotErr').textContent='';
-  $('#fItem').value=c?.item||''; $('#fCat').value=c?.cat||''; $('#fEmp').value=c?.emp||''; $('#fCnpj').value=c?.cnpj||'';
+  $('#fItem').value=c?.item||''; $('#fCat').value=c?.cat||'Geral'; $('#fEmp').value=c?.emp||''; $('#fCnpj').value=c?.cnpj||'';
   $('#fQtd').value=c?.qtd||1; $('#fPreco').value=c?.preco??''; $('#fData').value=c?.data||today(); open('#mCot');
 }
 $('#bNova').onclick=()=>openCot();
 $('#saveCot').onclick=async()=>{
-  const c={item:$('#fItem').value.trim(),cat:$('#fCat').value.trim()||'Geral',emp:$('#fEmp').value.trim(),cnpj:$('#fCnpj').value.trim(),
+  const c={item:$('#fItem').value.trim(),cat:$('#fCat').value||'Geral',emp:$('#fEmp').value.trim(),cnpj:$('#fCnpj').value.trim(),
     qtd:+$('#fQtd').value,preco:+$('#fPreco').value,data:$('#fData').value||today()};
   if(!c.item||!c.emp||!(c.qtd>0)||!(c.preco>0)){$('#cotErr').textContent='Informe item, empresa, quantidade e preço maiores que zero.';return;}
   try{
