@@ -1,0 +1,14 @@
+ rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /cotacoes/{id} {
+      // Opção 1: qualquer usuário logado lê e grava
+      allow read, write: if request.auth != null;
+
+      // Opção 2 (mais restrita): apague a linha acima e use esta,
+      // trocando pelos e-mails autorizados do setor:
+      // allow read, write: if request.auth != null
+      //   && request.auth.token.email in ["pessoa1@empresa.com", "pessoa2@empresa.com"];
+    }
+  }
+}
