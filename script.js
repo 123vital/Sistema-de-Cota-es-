@@ -4,16 +4,17 @@
   b.textContent='Erro no site: '+e.message+' ('+String(e.filename||'').split('/').pop()+':'+e.lineno+')';
 });
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
-let motivo='';
+let motivo='', cfg=null;
+try{cfg=firebaseConfig;}catch(e){cfg=window.firebaseConfig||null;}
 const configured=(()=>{
   if(typeof firebase==='undefined'){motivo='A biblioteca do Firebase não carregou. Verifique a internet ou desative o bloqueador de anúncios para este site.';return false;}
-  if(typeof firebaseConfig==='undefined'){motivo='O arquivo firebase-config.js não foi lido. Confira se ele está na raiz do repositório e se começa com: const firebaseConfig = {';return false;}
-  if(!firebaseConfig.apiKey||String(firebaseConfig.apiKey).startsWith('COLE')){motivo='Firebase não configurado. Cole as chaves do seu projeto em firebase-config.js.';return false;}
+  if(!cfg){motivo='O arquivo firebase-config.js não foi lido. Confira se ele está na raiz do repositório e se começa com: const firebaseConfig = {';return false;}
+  if(!cfg.apiKey||String(cfg.apiKey).startsWith('COLE')){motivo='Firebase não configurado. Cole as chaves do seu projeto em firebase-config.js.';return false;}
   return true;
 })();
 let auth,col;
 if(configured){
-  try{firebase.initializeApp(firebaseConfig);auth=firebase.auth();col=firebase.firestore().collection('cotacoes');}
+  try{firebase.initializeApp(cfg);auth=firebase.auth();col=firebase.firestore().collection('cotacoes');}
   catch(e){motivo='Erro ao iniciar o Firebase: '+e.message;}
 }
 const fbOk=configured&&!!auth;
