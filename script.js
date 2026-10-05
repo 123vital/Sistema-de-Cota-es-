@@ -4,8 +4,15 @@
   b.textContent='Erro no site: '+e.message+' ('+String(e.filename||'').split('/').pop()+':'+e.lineno+')';
 });
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
-let motivo='', cfg=null;
-try{cfg=firebaseConfig;}catch(e){cfg=window.firebaseConfig||null;}
+let motivo='';
+const cfg={
+  apiKey: "AIzaSyDtIK3NODGnnx2tSUSW3akVf7lVgdACq6Y",
+  authDomain: "sistema-cotacao-pmg.firebaseapp.com",
+  projectId: "sistema-cotacao-pmg",
+  storageBucket: "sistema-cotacao-pmg.firebasestorage.app",
+  messagingSenderId: "147814501670",
+  appId: "1:147814501670:web:e5adff7bc8f32bfa4145e7"
+};
 const configured=(()=>{
   if(typeof firebase==='undefined'){motivo='A biblioteca do Firebase não carregou. Verifique a internet ou desative o bloqueador de anúncios para este site.';return false;}
   if(!cfg){motivo='O arquivo firebase-config.js não foi lido. Confira se ele está na raiz do repositório e se começa com: const firebaseConfig = {';return false;}
