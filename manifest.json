@@ -1,0 +1,16 @@
+ {
+  "name": "Sistema de Orçamento — PMG",
+  "short_name": "Orçamento PMG",
+  "description": "Setor de Administração · consulta e comparação de cotações",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#04071a",
+  "theme_color": "#0e1629",
+  "lang": "pt-BR",
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png"},
+    {"src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}
