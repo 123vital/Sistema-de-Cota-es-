@@ -200,7 +200,6 @@ $('#sgo').onclick=async()=>{
   try{
     const cred=await auth.createUserWithEmailAndPassword(email,s1);
     await cred.user.updateProfile({displayName:nome});
-    $('#who').textContent=nome;
     ['sn','se','sp','sp2'].forEach(i=>$('#'+i).value='');
   }catch(e){err.textContent=erro(e);}
 };
@@ -226,7 +225,7 @@ if(!fbOk){
 }else{
   auth.onAuthStateChanged(user=>{
     $('#login').classList.toggle('open',!user);
-    $('#who').textContent=user?(user.displayName||user.email):'';
+    $('#who').textContent='';
     if(unsub){unsub();unsub=null;}
     if(user){
       unsub=col.onSnapshot(s=>{data=s.docs.map(d=>({id:d.id,...d.data()}));refresh();},
