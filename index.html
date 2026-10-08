@@ -13,7 +13,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<link rel="stylesheet" href="style.css?v=7">
+<link rel="stylesheet" href="style.css?v=8">
 </head>
 <body>
 
@@ -91,6 +91,8 @@
   <label for="fQtd">Quantidade</label><input id="fQtd" class="in" type="number" min="1" value="1">
   <label for="fPreco">Preço unitário (R$)</label><input id="fPreco" class="in" type="number" min="0" step="0.01">
   <label for="fData">Data da cotação</label><input id="fData" class="in" type="date">
+  <label for="fPrazo">Prazo de entrega</label><input id="fPrazo" class="in" placeholder="Ex.: 10 dias úteis">
+  <label for="fObs">Observação</label><textarea id="fObs" class="in" rows="3" placeholder="Condições, validade da proposta, forma de pagamento..." style="font:inherit;min-height:4.5rem;resize:vertical"></textarea>
   <p class="err" id="cotErr"></p>
   <div class="col"><button class="btn pri" id="saveCot">Salvar cotação</button><button class="btn" data-close>Cancelar</button></div>
 </div></div>
@@ -112,6 +114,6 @@
   <div class="col"><button class="btn pri" id="goRel">Gerar relatório</button><button class="btn" data-close>Cancelar</button></div>
 </div></div>
 
-<script src="script.js?v=7"></script>
+<script src="script.js?v=8"></script>
 </body>
 </html>
