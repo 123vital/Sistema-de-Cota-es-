@@ -57,22 +57,33 @@ function renderKpis(){
   $('#fCat').innerHTML=cats.map(c=>`<option ${c===(curForm||'Geral')?'selected':''}>${esc(c)}</option>`).join('');
 }
 
+function grafico(groups){
+  const itens=Object.entries(groups);
+  if(!itens.length)return '<div class="empty">Sem dados para o gráfico.</div>';
+  return '<div class="pad">'+itens.map(([item,a])=>{
+    const mx=Math.max(...a.map(total))||1;
+    return `<div class="grp"><h3>${esc(item)}</h3>`+a.map((c,i)=>{
+      const pct=Math.max(3,total(c)/mx*100), cor=i===0&&a.length>1?'#10b981':'#2f8bdf';
+      return `<div class="gitem"><div class="gtop"><span>${esc(c.emp)}${i===0&&a.length>1?' ★ mais barato':''}</span><b>${brl(total(c))}</b></div>`+
+        `<div class="gtrack"><div class="gfill" style="width:${pct}%;background:${cor}"></div></div></div>`;
+    }).join('')+'</div>';
+  }).join('')+'</div>';
+}
 function render(){
   const list=filtered(), groups=byItem(list), v=$('#view');
   if(!list.length){v.innerHTML='<div class="empty">Nenhuma cotação encontrada. Use "Nova cotação" ou "Importar".</div>';return;}
   if(tab==='cot'){
     const cheapest=new Set(Object.values(groups).filter(a=>a.length>1).map(a=>a[0].id));
-    v.innerHTML=`<div class="scroll"><table><thead><tr><th>Item</th><th>Empresa</th><th>Qtd</th><th>Preço unit.</th><th>Total</th><th>Data</th><th></th></tr></thead><tbody>`+
-    list.map(c=>`<tr><td>${esc(c.item)}<small>${esc(c.cat)}</small></td>
+    v.innerHTML=`<div class="scroll"><table><thead><tr><th>Item</th><th>Empresa</th><th>Qtd</th><th>Preço unit.</th><th>Total</th><th>Data</th><th>Prazo</th><th></th></tr></thead><tbody>`+
+    list.map(c=>`<tr><td>${esc(c.item)}<small>${esc(c.cat)}${c.obs?' · '+esc(c.obs):''}</small></td>
       <td>${esc(c.emp)}${cheapest.has(c.id)?'<span class="badge">Mais<br>barato</span>':''}<small>${esc(c.cnpj)}</small></td>
-      <td>${c.qtd}</td><td>${brl(c.preco)}</td><td>${brl(total(c))}</td><td>${fdate(c.data)}</td>
+      <td>${c.qtd}</td><td>${brl(c.preco)}</td><td>${brl(total(c))}</td><td>${fdate(c.data)}</td><td>${esc(c.prazo||'—')}</td>
       <td style="white-space:nowrap"><button class="btn sm" data-edit="${c.id}">Editar</button> <button class="btn sm" data-del="${c.id}">Excluir</button></td></tr>`).join('')+`</tbody></table></div>`;
   }else if(tab==='mapa'){
     v.innerHTML='<div class="pad">'+Object.entries(groups).map(([item,a])=>`<div class="grp"><h3>${esc(item)}</h3><div class="scroll"><table style="min-width:480px"><thead><tr><th>Empresa</th><th>Preço unit.</th><th>Total</th><th>Diferença</th></tr></thead><tbody>`+
       a.map((c,i)=>`<tr><td>${esc(c.emp)}${i===0&&a.length>1?'<span class="badge">Mais barato</span>':''}</td><td>${brl(c.preco)}</td><td>${brl(total(c))}</td><td>${i?'+'+((c.preco/a[0].preco-1)*100).toFixed(1)+'%':'—'}</td></tr>`).join('')+`</tbody></table></div></div>`).join('')+'</div>';
   }else if(tab==='graf'){
-    v.innerHTML='<div class="pad">'+Object.entries(groups).map(([item,a])=>{const mx=Math.max(...a.map(total));
-      return `<div class="grp"><h3>${esc(item)}</h3>`+a.map((c,i)=>`<div class="row"><span>${esc(c.emp)}</span><div class="bar"><i class="${i===0?'min':''}" style="width:${total(c)/mx*100}%"></i></div><b>${brl(total(c))}</b></div>`).join('')+'</div>';}).join('')+'</div>';
+    v.innerHTML=grafico(groups);
   }else{
     v.innerHTML='<div class="pad">'+Object.entries(groups).map(([item,a])=>{
       const b=a[0], w=a[a.length-1], eco=(w.preco-b.preco)*b.qtd;
@@ -95,12 +106,12 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeAll();});
 function openCot(c){
   editId=c?c.id:null; $('#cotTitle').textContent=c?'Editar cotação':'Nova cotação'; $('#cotErr').textContent='';
   $('#fItem').value=c?.item||''; $('#fCat').value=c?.cat||'Geral'; $('#fEmp').value=c?.emp||''; $('#fCnpj').value=c?.cnpj||'';
-  $('#fQtd').value=c?.qtd||1; $('#fPreco').value=c?.preco??''; $('#fData').value=c?.data||today(); open('#mCot');
+  $('#fQtd').value=c?.qtd||1; $('#fPreco').value=c?.preco??''; $('#fData').value=c?.data||today(); $('#fPrazo').value=c?.prazo||''; $('#fObs').value=c?.obs||''; open('#mCot');
 }
 $('#bNova').onclick=()=>openCot();
 $('#saveCot').onclick=async()=>{
   const c={item:$('#fItem').value.trim(),cat:$('#fCat').value||'Geral',emp:$('#fEmp').value.trim(),cnpj:$('#fCnpj').value.trim(),
-    qtd:+$('#fQtd').value,preco:+$('#fPreco').value,data:$('#fData').value||today()};
+    qtd:+$('#fQtd').value,preco:+$('#fPreco').value,data:$('#fData').value||today(),prazo:$('#fPrazo').value.trim(),obs:$('#fObs').value.trim()};
   if(!c.item||!c.emp||!(c.qtd>0)||!(c.preco>0)){$('#cotErr').textContent='Informe item, empresa, quantidade e preço maiores que zero.';return;}
   try{
     if(editId)await col.doc(editId).update(c);
@@ -115,15 +126,15 @@ $('#view').onclick=e=>{
 };
 
 /* Excel */
-const cols=['Item','Categoria','Empresa','CNPJ','Quantidade','Preço unitário','Data'];
-const toRow=c=>[c.item,c.cat,c.emp,c.cnpj,c.qtd,c.preco,c.data];
+const cols=['Item','Categoria','Empresa','CNPJ','Quantidade','Preço unitário','Data','Prazo','Observação'];
+const toRow=c=>[c.item,c.cat,c.emp,c.cnpj,c.qtd,c.preco,c.data,c.prazo||'',c.obs||''];
 function download(rows,name){
   if(window.XLSX){const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([cols,...rows]),'Cotações');XLSX.writeFile(wb,name+'.xlsx');return;}
   const csv='\ufeff'+[cols,...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(';')).join('\n');
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=name+'.csv';a.click();
 }
 $('#bExp').onclick=()=>download(filtered().map(toRow),'cotacoes-pmg');
-$('#bMod').onclick=()=>download([['Resma de papel A4 500 folhas','Papelaria','Empresa Exemplo','00.000.000/0001-00',100,25.5,today()]],'modelo-cotacoes');
+$('#bMod').onclick=()=>download([['Resma de papel A4 500 folhas','Papelaria','Empresa Exemplo','00.000.000/0001-00',100,25.5,today(),'10 dias úteis','Exemplo de observação']],'modelo-cotacoes');
 $('#bImp').onclick=()=>$('#file').click();
 $('#file').onchange=async e=>{
   const f=e.target.files[0]; if(!f)return;
@@ -133,7 +144,7 @@ $('#file').onchange=async e=>{
     const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1}).slice(1).filter(r=>r[0]&&r[2]);
     for(let i=0;i<rows.length;i+=400){
       const batch=col.firestore.batch();
-      rows.slice(i,i+400).forEach(r=>batch.set(col.doc(),{item:String(r[0]),cat:String(r[1]||'Geral'),emp:String(r[2]),cnpj:String(r[3]||''),qtd:+r[4]||1,preco:+String(r[5]).replace(',','.')||0,data:String(r[6]||today()),criadoPor:auth.currentUser.email,criadoEm:firebase.firestore.FieldValue.serverTimestamp()}));
+      rows.slice(i,i+400).forEach(r=>batch.set(col.doc(),{item:String(r[0]),cat:String(r[1]||'Geral'),emp:String(r[2]),cnpj:String(r[3]||''),qtd:+r[4]||1,preco:+String(r[5]).replace(',','.')||0,data:String(r[6]||today()),prazo:String(r[7]||''),obs:String(r[8]||''),criadoPor:auth.currentUser.email,criadoEm:firebase.firestore.FieldValue.serverTimestamp()}));
       await batch.commit();
     }
     alert(rows.length+' cotação(ões) importada(s).');
