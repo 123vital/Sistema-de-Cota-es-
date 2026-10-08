@@ -57,7 +57,7 @@ function renderKpis(){
   $('#fCat').innerHTML=cats.map(c=>`<option ${c===(curForm||'Geral')?'selected':''}>${esc(c)}</option>`).join('');
 }
 
-function grafico(groups){
+function grafBarras(groups){
   const itens=Object.entries(groups);
   if(!itens.length)return '<div class="empty">Sem dados para o gráfico.</div>';
   return '<div class="pad">'+itens.map(([item,a])=>{
@@ -68,6 +68,61 @@ function grafico(groups){
         `<div class="gtrack"><div class="gfill" style="width:${pct}%;background:${cor}"></div></div></div>`;
     }).join('')+'</div>';
   }).join('')+'</div>';
+}
+let grafTipo='barras', grafItem='';
+const PAL=['#2f8bdf','#10b981','#f59e0b','#ef4444','#a78bfa','#14b8a6','#f472b6','#84cc16'];
+function grafColunas(list){
+  const t={}; list.forEach(c=>t[c.emp]=(t[c.emp]||0)+total(c));
+  const e=Object.entries(t).sort((a,b)=>b[1]-a[1]); const mx=Math.max(...e.map(x=>x[1]))||1;
+  return '<div class="pad"><h3>Total gasto estimado por empresa</h3><div class="cols">'+e.map(([n,v],i)=>
+    `<div class="col1"><b>${brl(v)}</b><div class="cbar" style="height:${(v/mx)*11}rem;background:${PAL[i%PAL.length]}"></div><span>${esc(n)}</span></div>`).join('')+'</div></div>';
+}
+function grafPizza(list){
+  const t={}; list.forEach(c=>t[c.emp]=(t[c.emp]||0)+total(c));
+  const e=Object.entries(t).sort((a,b)=>b[1]-a[1]); const sum=e.reduce((s,x)=>s+x[1],0)||1;
+  let ang=-Math.PI/2, paths='';
+  e.forEach(([n,v],i)=>{
+    const f=v/sum, a2=ang+f*2*Math.PI, col=PAL[i%PAL.length];
+    if(f>=0.9999){paths+=`<circle cx="100" cy="100" r="90" fill="${col}"/>`;}
+    else{
+      const x1=100+90*Math.cos(ang), y1=100+90*Math.sin(ang), x2=100+90*Math.cos(a2), y2=100+90*Math.sin(a2);
+      paths+=`<path d="M100 100 L${x1} ${y1} A90 90 0 ${f>0.5?1:0} 1 ${x2} ${y2} Z" fill="${col}" stroke="var(--bg)" stroke-width="2"/>`;
+    }
+    ang=a2;
+  });
+  const legenda=e.map(([n,v],i)=>`<li><i style="background:${PAL[i%PAL.length]}"></i><span>${esc(n)}</span><b>${(v/sum*100).toFixed(1)}%</b></li>`).join('');
+  return '<div class="pad"><h3>Participação de cada empresa no valor total</h3><div class="pizza"><svg class="pie" viewBox="0 0 200 200">'+paths+'</svg><ul class="leg">'+legenda+'</ul></div></div>';
+}
+function grafEvolucao(list){
+  const itens=[...new Set(list.map(c=>c.item))];
+  if(!grafItem||!itens.includes(grafItem))grafItem=itens[0];
+  const sel=list.filter(c=>c.item===grafItem);
+  const datas=[...new Set(sel.map(c=>c.data||''))].sort();
+  const emps=[...new Set(sel.map(c=>c.emp))];
+  const precos=sel.map(c=>+c.preco||0); const mn=Math.min(...precos), mx=Math.max(...precos), span=(mx-mn)||1;
+  const W=600,H=300,L=110,R=20,T=20,B=44;
+  const X=i=>datas.length<2?(L+(W-L-R)/2):L+i*(W-L-R)/(datas.length-1);
+  const Y=v=>T+(1-((+v||0)-mn)/span)*(H-T-B);
+  let g=`<line x1="${L}" y1="${T}" x2="${L}" y2="${H-B}" stroke="var(--line)"/><line x1="${L}" y1="${H-B}" x2="${W-R}" y2="${H-B}" stroke="var(--line)"/>`;
+  g+=`<text x="${L-10}" y="${T+6}" text-anchor="end" font-size="18" fill="var(--mut)">${brl(mx)}</text><text x="${L-10}" y="${H-B}" text-anchor="end" font-size="18" fill="var(--mut)">${brl(mn)}</text>`;
+  datas.forEach((d,i)=>{g+=`<text x="${X(i)}" y="${H-B+28}" text-anchor="middle" font-size="16" fill="var(--mut)">${fdate(d)||'—'}</text>`;});
+  emps.forEach((emp,k)=>{
+    const col=PAL[k%PAL.length];
+    const pts=sel.filter(c=>c.emp===emp).map(c=>({x:X(datas.indexOf(c.data||'')),y:Y(c.preco)})).sort((a,b)=>a.x-b.x);
+    if(pts.length>1)g+=`<polyline points="${pts.map(p=>p.x+','+p.y).join(' ')}" fill="none" stroke="${col}" stroke-width="3"/>`;
+    pts.forEach(p=>{g+=`<circle cx="${p.x}" cy="${p.y}" r="7" fill="${col}"/>`;});
+  });
+  const chips=itens.map(it=>`<button class="chip${it===grafItem?' on':''}" data-gitem="${esc(it)}">${esc(it)}</button>`).join('');
+  const legenda=emps.map((e,k)=>`<li><i style="background:${PAL[k%PAL.length]}"></i><span>${esc(e)}</span></li>`).join('');
+  return '<div class="pad"><h3>Evolução do preço unitário</h3><div class="chips">'+chips+'</div>'+
+    `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Evolução de preço">${g}</svg>`+
+    '<ul class="leg" style="margin-top:1rem">'+legenda+'</ul></div>';
+}
+function grafico(list,groups){
+  const tipos=[['barras','Barras'],['colunas','Colunas'],['pizza','Pizza'],['evolucao','Evolução']];
+  const menu=`<div class="pad"><div class="chips">${tipos.map(([k,n])=>`<button class="chip${grafTipo===k?' on':''}" data-gtipo="${k}">${n}</button>`).join('')}</div></div>`;
+  const corpo=grafTipo==='colunas'?grafColunas(list):grafTipo==='pizza'?grafPizza(list):grafTipo==='evolucao'?grafEvolucao(list):grafBarras(groups);
+  return menu+corpo;
 }
 function render(){
   const list=filtered(), groups=byItem(list), v=$('#view');
@@ -87,7 +142,7 @@ function render(){
     v.innerHTML='<div class="pad">'+Object.entries(groups).map(([item,a])=>`<div class="grp"><h3>${esc(item)}</h3><div class="scroll"><table style="min-width:480px"><thead><tr><th>Empresa</th><th>Preço unit.</th><th>Total</th><th>Diferença</th></tr></thead><tbody>`+
       a.map((c,i)=>`<tr><td>${esc(c.emp)}${i===0&&a.length>1?'<span class="badge">Mais barato</span>':''}</td><td>${brl(c.preco)}</td><td>${brl(total(c))}</td><td>${i?'+'+((c.preco/a[0].preco-1)*100).toFixed(1)+'%':'—'}</td></tr>`).join('')+`</tbody></table></div></div>`).join('')+'</div>';
   }else if(tab==='graf'){
-    v.innerHTML=grafico(groups);
+    v.innerHTML=grafico(list,groups);
   }else{
     v.innerHTML='<div class="pad">'+Object.entries(groups).map(([item,a])=>{
       const b=a[0], w=a[a.length-1], eco=(w.preco-b.preco)*b.qtd;
@@ -124,6 +179,9 @@ $('#saveCot').onclick=async()=>{
   }catch(err){$('#cotErr').textContent='Não foi possível salvar: '+err.message;}
 };
 $('#view').onclick=e=>{
+  const gt=e.target.closest('[data-gtipo]'), gi=e.target.closest('[data-gitem]');
+  if(gt){grafTipo=gt.dataset.gtipo;return render();}
+  if(gi){grafItem=gi.dataset.gitem;return render();}
   const ed=e.target.closest('[data-edit]'), dl=e.target.closest('[data-del]');
   if(ed)openCot(data.find(x=>x.id==ed.dataset.edit));
   if(dl&&confirm('Excluir esta cotação?'))col.doc(dl.dataset.del).delete().catch(err=>alert('Não foi possível excluir: '+err.message));
