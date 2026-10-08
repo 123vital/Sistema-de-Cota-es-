@@ -115,3 +115,11 @@ img,canvas,svg{max-width:100%}
 .btn,.tab{min-height:2.75rem}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 @media print{header,.actions,.tabs,.field{display:none}}
+
+/* Gráficos de barras */
+.gitem{margin:.6rem 0 1rem}
+.gtop{display:flex;justify-content:space-between;align-items:baseline;gap:.8rem;flex-wrap:wrap;margin-bottom:.35rem}
+.gtop span{color:var(--tx);overflow-wrap:anywhere}
+.gtop b{white-space:nowrap}
+.gtrack{height:1.4rem;background:var(--panel2);border:1px solid var(--line);border-radius:.7rem;overflow:hidden}
+.gfill{height:100%;border-radius:.7rem}
