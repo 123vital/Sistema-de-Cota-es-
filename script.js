@@ -71,7 +71,11 @@ function grafico(groups){
 }
 function render(){
   const list=filtered(), groups=byItem(list), v=$('#view');
-  if(!list.length){v.innerHTML='<div class="empty">Nenhuma cotação encontrada. Use "Nova cotação" ou "Importar".</div>';return;}
+  if(!list.length){
+    const msg=tab==='graf'?'Os gráficos aparecem quando houver cotações cadastradas. Use "Nova cotação" ou "Importar".':
+      'Nenhuma cotação encontrada. Use "Nova cotação" ou "Importar".';
+    v.innerHTML='<div class="empty">'+msg+'</div>';return;
+  }
   if(tab==='cot'){
     const cheapest=new Set(Object.values(groups).filter(a=>a.length>1).map(a=>a[0].id));
     v.innerHTML=`<div class="scroll"><table><thead><tr><th>Item</th><th>Empresa</th><th>Qtd</th><th>Preço unit.</th><th>Total</th><th>Data</th><th>Prazo</th><th></th></tr></thead><tbody>`+
