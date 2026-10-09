@@ -43,7 +43,7 @@ const fbOk=configured&&!!auth;
 const brl=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fdate=d=>d?d.split('-').reverse().join('/'):'';
-const today=()=>new Date().toISOString().slice(0,10);
+const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
 
 const CATEGORIAS=['Material de Escritório','Informática','Mobiliário','Limpeza','Serviços','Obras e Manutenção','Veículos','Geral'];
 let data=[], tab='cot', editId=null;
